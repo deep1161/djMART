@@ -17,12 +17,40 @@ const CartPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  //total price
+  // Quantity state
+  const [quantities, setQuantities] = useState({});
+
+  // Increment quantity
+  const incrementQuantity = (productId) => {
+    setQuantities((prevQuantities) => ({
+      ...prevQuantities,
+      [productId]: (prevQuantities[productId] || 0) + 1,
+    }));
+  };
+
+  // Decrement quantity
+  const decrementQuantity = (productId) => {
+    setQuantities((prevQuantities) => {
+      const currentQuantity = prevQuantities[productId] || 0;
+      const newQuantity = currentQuantity > 0 ? currentQuantity - 1 : 0;
+      return {
+        ...prevQuantities,
+        [productId]: newQuantity,
+      };
+    });
+  };
+
+  // Get quantity for a product
+  const getQuantity = (productId) => {
+    return quantities[productId] || 0;
+  };
+
+  // Total price
   const totalPrice = () => {
     try {
       let total = 0;
-      cart?.map((item) => {
-        total = total + item.price;
+      cart?.forEach((item) => {
+        total = total + item.price * getQuantity(item._id);
       });
       return total.toLocaleString("en-IN", {
         style: "currency",
@@ -32,7 +60,8 @@ const CartPage = () => {
       console.log(error);
     }
   };
-  //detele item
+
+  // Delete item
   const removeCartItem = (pid) => {
     try {
       let myCart = [...cart];
@@ -45,7 +74,7 @@ const CartPage = () => {
     }
   };
 
-  //get payment gateway token
+  // Get payment gateway token
   const getToken = async () => {
     try {
       const { data } = await axios.get("/api/v1/product/braintree/token");
@@ -54,11 +83,12 @@ const CartPage = () => {
       console.log(error);
     }
   };
+
   useEffect(() => {
     getToken();
   }, [auth?.token]);
 
-  //handle payments
+  // Handle payments
   const handlePayment = async () => {
     try {
       setLoading(true);
@@ -66,10 +96,12 @@ const CartPage = () => {
       const { data } = await axios.post("/api/v1/product/braintree/payment", {
         nonce,
         cart,
+        quantities,
       });
       setLoading(false);
       localStorage.removeItem("cart");
       setCart([]);
+      setQuantities({});
       navigate("/dashboard/user/orders");
       toast.success("Payment Completed Successfully ");
     } catch (error) {
@@ -77,6 +109,7 @@ const CartPage = () => {
       setLoading(false);
     }
   };
+
   return (
     <Layout>
       <div className=" cart-page">
@@ -116,12 +149,29 @@ const CartPage = () => {
                     <p>Price : {p.price}</p>
                   </div>
                   <div className="col-md-4 cart-remove-btn">
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => removeCartItem(p._id)}
-                    >
-                      Remove
-                    </button>
+                    <div className="d-flex justify-content-between align-items-center">
+                      <div>
+                        <button
+                          className="btn btn-outline-dark"
+                          onClick={() => decrementQuantity(p._id)}
+                        >
+                          -
+                        </button>
+                        <span className="mx-2">{getQuantity(p._id)}</span>
+                        <button
+                          className="btn btn-outline-dark"
+                          onClick={() => incrementQuantity(p._id)}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => removeCartItem(p._id)}
+                      >
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

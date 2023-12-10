@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import Layout from "./../components/Layout/Layout";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { useCart } from "../context/cart";
+import toast from "react-hot-toast";
 import "../styles/ProductDetailsStyles.css";
 
 const ProductDetails = () => {
@@ -9,12 +11,15 @@ const ProductDetails = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState({});
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [cart, setCart] = useCart();
+  const [quantity, setQuantity] = useState(1); // Initialize quantity to 1
 
-  //initalp details
+  // initial details
   useEffect(() => {
     if (params?.slug) getProduct();
   }, [params?.slug]);
-  //getProduct
+
+  // getProduct
   const getProduct = async () => {
     try {
       const { data } = await axios.get(
@@ -26,7 +31,8 @@ const ProductDetails = () => {
       console.log(error);
     }
   };
-  //get similar product
+
+  // get similar product
   const getSimilarProduct = async (pid, cid) => {
     try {
       const { data } = await axios.get(
@@ -37,6 +43,23 @@ const ProductDetails = () => {
       console.log(error);
     }
   };
+
+  // Function to handle Add to Cart
+  const handleAddToCart = () => {
+    const item = { ...product, quantity }; // Include the quantity in the cart item
+    setCart([...cart, item]);
+    localStorage.setItem("cart", JSON.stringify([...cart, item]));
+    toast.success("Item Added to Cart");
+  };
+
+  // Function to handle Remove from Cart
+  const handleRemoveFromCart = () => {
+    const updatedCart = cart.filter((item) => item._id !== product._id);
+    setCart(updatedCart);
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    toast.success("Item Removed from Cart");
+  };
+
   return (
     <Layout>
       <div className="row container product-details">
@@ -62,7 +85,46 @@ const ProductDetails = () => {
             })}
           </h6>
           <h6>Category : {product?.category?.name}</h6>
-          <button class="btn btn-secondary ms-1">ADD TO CART</button>
+          <div className="d-flex align-items-center">
+            <div className="input-group mb-3 quantity-input">
+              <button
+                className="btn btn-outline-secondary"
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+              >
+                -
+              </button>
+              <input
+                type="text"
+                className="form-control"
+                value={quantity}
+                readOnly
+              />
+              <button
+                className="btn btn-outline-secondary"
+                type="button"
+                onClick={() => setQuantity(quantity + 1)}
+              >
+                +
+              </button>
+            </div>
+            <button
+              className="btn btn-secondary ms-2"
+              onClick={handleAddToCart}
+            >
+              ADD TO CART
+            </button>
+            {cart.some((item) => item._id === product._id) && (
+              <>
+                <button
+                  className="btn btn-outline-danger ms-2"
+                  onClick={handleRemoveFromCart}
+                >
+                  REMOVE FROM CART
+                </button>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <hr />
@@ -99,19 +161,13 @@ const ProductDetails = () => {
                   >
                     More Details
                   </button>
-                  {/* <button
-                  className="btn btn-dark ms-1"
-                  onClick={() => {
-                    setCart([...cart, p]);
-                    localStorage.setItem(
-                      "cart",
-                      JSON.stringify([...cart, p])
-                    );
-                    toast.success("Item Added to cart");
-                  }}
-                >
-                  ADD TO CART
-                </button> */}
+                  {/* Add to Cart button */}
+                  <button
+                    className="btn btn-dark ms-1"
+                    onClick={() => handleAddToCart(p)}
+                  >
+                    ADD TO CART
+                  </button>
                 </div>
               </div>
             </div>
