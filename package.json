@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "ecommerce rest api",
   "main": "server.js",
+  "homepage": "./",
   "type": "module",
   "scripts": {
     "start": "node server.js",
@@ -30,5 +31,5 @@
     "react-icons": "^4.7.1",
     "slugify": "^1.6.5"
   },
-  "proxy":"https://localhost:8080/"
+  "proxy": "https://localhost:8080/"
 }
